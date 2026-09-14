@@ -2,7 +2,9 @@
 
 A backend URL shortener built with FastAPI, PostgreSQL and SQLAlchemy.
 
-ShortLink API allows users to create shortened URLs and redirect them to their original destination while storing all links persistently in PostgreSQL.
+ShortLink API allows users to create shortened URLs and redirect them to their original destination while storing links persistently in PostgreSQL.
+
+The project includes database migrations with Alembic and an automated test suite with pytest.
 
 ## Features
 
@@ -12,6 +14,10 @@ ShortLink API allows users to create shortened URLs and redirect them to their o
 - Unique short-code validation
 - Secure short-code generation with Python `secrets`
 - Environment-based configuration
+- Database migrations with Alembic
+- Automated API tests with pytest
+- Isolated test database
+- UTC-aware timestamps
 - Automatic API documentation with Swagger UI
 - SQLAlchemy ORM integration
 
@@ -24,20 +30,31 @@ ShortLink API allows users to create shortened URLs and redirect them to their o
 - Psycopg
 - Pydantic
 - Pydantic Settings
+- Alembic
+- pytest
 - Uvicorn
 
 ## Project Structure
 
 ```text
 shortlink-api/
+├── alembic/
+│   ├── versions/
+│   │   ├── 7df68c8ed018_create_links_table.py
+│   │   └── e6fc476ddda5_use_timezone_aware_timestamps.py
+│   └── env.py
 ├── app/
 │   ├── models/
 │   │   └── link.py
 │   ├── config.py
 │   ├── database.py
 │   └── main.py
+├── tests/
+│   ├── conftest.py
+│   └── test_main.py
 ├── .env.example
 ├── .gitignore
+├── alembic.ini
 ├── requirements.txt
 └── README.md
 ```
@@ -91,7 +108,19 @@ Create a PostgreSQL database named `shortlink`:
 CREATE DATABASE shortlink;
 ```
 
-The application currently creates the required database tables automatically when it starts.
+Apply the database migrations:
+
+```bash
+alembic upgrade head
+```
+
+Alembic manages the database schema and keeps it synchronized with the application models.
+
+To check the current migration:
+
+```bash
+alembic current
+```
 
 ## Running the API
 
@@ -137,7 +166,7 @@ Example response:
   "original_url": "https://www.example.com/",
   "short_code": "Ab3Xy9",
   "short_url": "http://127.0.0.1:8000/Ab3Xy9",
-  "created_at": "2026-09-14T12:00:00"
+  "created_at": "2026-09-14T12:00:00+00:00"
 }
 ```
 
@@ -155,6 +184,8 @@ GET /Ab3Xy9
 
 The API retrieves the corresponding link from PostgreSQL and redirects the client to the original URL.
 
+If the short code does not exist, the API returns a `404 Not Found` response.
+
 ## Short Code Generation
 
 Short codes are generated using Python's `secrets` module.
@@ -163,14 +194,58 @@ Before storing a new link, the API checks whether the generated short code alrea
 
 The PostgreSQL database also enforces a unique constraint on short codes.
 
+## Database Migrations
+
+Database schema changes are managed with Alembic.
+
+The migration history currently includes:
+
+- Initial `links` table creation
+- Migration to timezone-aware timestamps
+
+New migrations can be generated with:
+
+```bash
+alembic revision --autogenerate -m "migration description"
+```
+
+Then applied with:
+
+```bash
+alembic upgrade head
+```
+
+## Tests
+
+The project includes automated tests for the main API behavior.
+
+The test suite currently verifies:
+
+- API health endpoint
+- Short-link creation
+- Redirect behavior
+- `404` response for nonexistent short codes
+
+Tests use an isolated SQLite database so they do not modify the development PostgreSQL database.
+
+Run the test suite with:
+
+```bash
+python -m pytest
+```
+
+Current test suite:
+
+```text
+4 passed
+```
+
 ## Roadmap
 
-The current version implements the core URL-shortening functionality.
+The current version implements the core URL-shortening functionality, database migrations and automated testing.
 
-Planned improvements:
+Possible future improvements:
 
-- Database migrations with Alembic
-- Automated tests with pytest
 - Custom aliases
 - Link expiration
 - Click analytics
