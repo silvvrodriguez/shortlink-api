@@ -6,7 +6,7 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, HttpUrl
 from sqlalchemy.orm import Session
 
-from app.database import Base, engine, SessionLocal
+from app.database import SessionLocal
 from app.models.link import Link
 
 
@@ -14,9 +14,6 @@ app = FastAPI(
     title="ShortLink API",
     version="1.0.0"
 )
-
-
-Base.metadata.create_all(bind=engine)
 
 
 class LinkCreate(BaseModel):
